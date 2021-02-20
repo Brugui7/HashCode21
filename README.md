@@ -5,7 +5,8 @@
 - Eduardo
 - José
 
-Pruebas
-
-Team Members:
-- Eduardo
+## Tareas
+- [ ] Analizar datasets
+- [ ] Solución fuerza bruta
+- [ ] Solución con binary search
+- [ ] Solución con heurísticas
