@@ -6,7 +6,7 @@
 - José
 
 ## Tareas
-- [ ] Analizar datasets
+- [x] Analizar datasets
 - [ ] Solución fuerza bruta
 - [ ] Solución con binary search
 - [ ] Solución con heurísticas
