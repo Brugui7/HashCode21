@@ -4,75 +4,93 @@
 #include <algorithm>
 #include <iostream>
 #include <cassert>
+#include <map>
 
-template<typename key_t, typename value_t>
+template<typename weight_t, typename key_t>
 class decision_tree
 {
-    using pair_t = std::pair<key_t,value_t>;
+    using pair_t = std::pair<weight_t,key_t>;
     
     
     struct node
     {
-        pair_t key_val;
-        key_t sum{};
+        pair_t wk;
+        weight_t sum{};
         
         node(const pair_t& N):
-            key_val{N},
-            sum{key_val.first}
+            wk{N},
+            sum{wk.first}
         {
         }
     };
     
+    std::map<key_t,size_t> position;
     std::vector<node> data;
-    
     
     void update(int pos)
     {
         for(;pos;pos/=2)
         {
             int l=pos*2, r = l+1;
-            data[pos-1].sum = data[pos-1].key_val.first ;
+            data[pos-1].sum = data[pos-1].wk.first ;
             
             if(l<=data.size()) data[pos-1].sum += data[l-1].sum;
             if(r<=data.size()) data[pos-1].sum += data[r-1].sum;
         }
     }
     
+    void remove(size_t pos)
+    {
+       size_t a = pos, b = data.size();
+       key_t ka = data[a-1].wk.second, kb=data[b-1].wk.second;
+       position[kb] = a;
+       // position[ka] = b;
+       position.erase(ka);
+      
+      
+       if(a<=0 or a>data.size()) return;
+       std::swap(data[a-1],data[b-1]);
+       data.pop_back();
+       update(a);
+       update(b/2);
+    }
     public:
     class iterator
     {
        decision_tree& tree;
        
        public:
-       int pos;
+       size_t pos;
        
-       iterator(decision_tree& t,int p):
+       iterator(decision_tree& t,size_t p):
             tree{t}, pos{p}
        {}
        
        pair_t& operator * ()
        {
-            return tree.data[pos-1].key_val;
+            return tree.data[pos-1].wk;
        }
        
        pair_t* operator -> ()
        {
-            return &tree.data[pos-1].key_val;
+            return &tree.data[pos-1].wk;
        }
     };
+    
     decision_tree(){  }
     auto size()const {return data.size();}
     
     void insert(const pair_t& N)
     {
         data.emplace_back(N);
+        position[N.second] = data.size();
         update(data.size());
     }
     
-    key_t sum() const
+    weight_t sum() const
     {
         if(data.size()==0)
-            return key_t{};
+            return weight_t{};
         return data[0].sum;
     }
     
@@ -85,53 +103,55 @@ class decision_tree
         return iterator(*this,1);
     }
     
-    iterator find(key_t k)
+    iterator sample(weight_t w)
     {
-       if(k<0)
+       if(w<0)
             return begin();
        
-       // 0<= k < sum all keys
-       if( k >= sum())
+       // 0<= w < sum all weights
+       if( w >= sum())
             return end();
        
        int pos = 1;
-       while( k >= data[pos-1].key_val.first )
+       while( w >= data[pos-1].wk.first )
        {
             int l = pos*2, r = l+1;
-            k-= data[pos-1].key_val.first;
-            if(k<data[l-1].sum)
+            w-= data[pos-1].wk.first;
+            if(w<data[l-1].sum)
                 pos = l;
             else
             {
-                k -= data[l-1].sum;
+                w -= data[l-1].sum;
                 pos = r;
             }
        }
        assert(pos>0 and pos<= data.size());
        return iterator(*this,pos);
     }
-    /*
-    void erase(int pos)
-    {
-        erase(iterator(*this,pos));
-    }
-    */
-    
     void erase(iterator i)
     {
-       if(i.pos<=0 or i.pos>data.size()) return;
-       std::swap(data[i.pos-1],data.back());
-       data.pop_back();
-       update(data.size());
-       update(i.pos);
+        remove(i.pos);
     }
-    /*
+    void erase(key_t k)
+    {
+        auto it = find(k);
+        erase(it);
+    }
+    
+    iterator find(key_t k)
+    {
+        auto it = position.find(k);
+        if(it == position.end())
+            return end();
+        return iterator(*this,it->second);
+    }
+    /* 
     void print()const
     {
-        std::cout << "size = " << size() << " sum = " << sum() << '\n';
+        std::cerr << "size = " << size() << " sum = " << sum() << '\n';
         for(int i=0;i<size();++i)
         {
-            std:: cout << (i+1) << ' ' << data[i].key_val.first << ' ' <<
+            std:: cerr << (i+1) << ' ' << data[i].key_val.first << ' ' <<
             data[i].key_val.second << ' '  << data[i].sum << '\n';
         }
     }
