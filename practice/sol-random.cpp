@@ -10,8 +10,9 @@
 #include <cmath>
 #include "decision_tree.h"
 
-constexpr double ALPHA = 2.0;
-constexpr int MAX_SEARCH = 1000;
+constexpr double ALPHA = 1.0;
+constexpr int SEARCH_ITERATIONS = 1000;
+constexpr int SEARCH_SPACE = 20;
 
 #define __fast_io__ \
     std::ios_base::sync_with_stdio(false);std::cin.tie(0);std::cout.tie(0);
@@ -26,11 +27,16 @@ struct pizza_t : ingredient_set
     
     pizza_t(int i): index{i}
     {}
+    bool operator<(const pizza_t& that)const
+    {
+        return that.count() == this->count() ? that.index < this->index :
+            that.count() < this->count();
+    }
 };
 
 struct pizzaDB
 {
-    int pizza_index{0};
+    int pizza_index{0},last_pizza{-1};
     map<string,int> mingredients;
     vector<pizza_t> vpizza;
     vector<double> weight;
@@ -54,10 +60,8 @@ struct pizzaDB
             p[val]=1;
         }
         
-        const double w = std::pow(p.count(),ALPHA);
         vpizza.push_back(p);
-        weight.push_back(w);
-        T.insert({w,p.index});
+        last_pizza = vpizza.size()-1;
     }
     
     pizzaDB(int n):
@@ -79,7 +83,7 @@ struct pizzaDB
         
         
         
-        for(int trial=0;trial<MAX_SEARCH;++trial)
+        for(int trial=0;trial<SEARCH_ITERATIONS;++trial)
         {
             vector<int> sol(n);
             
@@ -89,8 +93,8 @@ struct pizzaDB
                 double r = U(rng) * T.sum();
                 
                 // cerr << "r=" << r << " T.sum()=" << T.sum() << '\n';
-                
                 //T.print();
+                
                 auto it = T.sample(r);
                 
                 int index = it->second;
@@ -116,8 +120,38 @@ struct pizzaDB
         
         for(auto i: best_sol)
             T.erase(i);
+        for(int i=0;i<n and last_pizza>=0;++i)
+        {
+            load_last_pizza();
+        }
         
         return make_pair(best_score,best_sol);
+    }
+    void sort()
+    {
+        std::sort(vpizza.begin(),vpizza.end());
+    }
+    void compute_weights()
+    {
+        for(const auto& p: vpizza)
+        {
+            double w = std::pow(p.count(),ALPHA);
+            weight.push_back(w);
+        }
+    }
+    void load_last_pizza()
+    {
+        const auto &p = vpizza[last_pizza];
+        const auto &w = weight[last_pizza];
+        T.insert({w,p.index});
+        --last_pizza;
+    }
+    void load_pizzas()
+    {  
+        for(int i=0;i<SEARCH_SPACE and last_pizza>=0;++i)    
+        {
+            load_last_pizza();
+        }
     }
     
 };
@@ -146,6 +180,10 @@ int main()
     int64_t score =0;
     
     vector< vector<int> > vdeliver;
+    
+    pdb.sort();
+    pdb.compute_weights();
+    pdb.load_pizzas();
     
     for(int i=nteams.size()-1;i>=0;--i)
     while(nteams[i]--)
