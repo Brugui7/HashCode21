@@ -11,6 +11,7 @@ public class Simulation {
     private HashMap<String, Street> streets;
     private List<CarPath> paths;
     public HashMap<Integer, Intersection> intersections;
+    public HashMap<String, Integer> carsByStreet;
     public ArrayList<IntersectionScheduled> scheduleds;
 
 
@@ -24,10 +25,18 @@ public class Simulation {
         for (Intersection intersection : intersections.values()){
             IntersectionScheduled intScheduled = new IntersectionScheduled(intersection.id);
             for (Street street : intersection.in){
+                if (carsByStreet.get(street.name) == null) continue;
+                if (carsByStreet.get(street.name) == 1) continue;
+
+
                 intScheduled.schedule.put(street.name, 1);
+                duration--;
             }
+            if (intScheduled.schedule.size() == 0) continue;
             scheduleds.add(intScheduled);
+            //scheduleds.get(scheduleds.size() - 1);
         }
+        System.out.println("Duracion restante: " + duration);
     }
 
 
@@ -38,6 +47,7 @@ public class Simulation {
         this.streets = new HashMap<>();
         this.paths = new ArrayList<>();
         this.intersections = new HashMap<>();
+        this.carsByStreet = new HashMap<>();
     }
 
     public Simulation(int intersectionsNumber, int duration, int streetsNumber, int carsNumber, int bonusPoints) {

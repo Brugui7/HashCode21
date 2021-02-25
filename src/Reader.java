@@ -35,7 +35,7 @@ public class Reader {
 
         HashMap<Integer, Intersection> intersections = new HashMap<>();
         int lineCounter = 1;
-        for (int i = 0; i < simulation.intersectionsNumber; ++i){
+        for (int i = 0; i < simulation.streetsNumber; ++i){
             String[] streetData = lines.get(lineCounter++).split(" ");
             Street street = new Street();
             street.name = streetData[2];
@@ -56,26 +56,22 @@ public class Reader {
 
         }
 
-        /*for (int i = 0; i < simulation.carsNumber; ++i){
-            String[] streetData = lines.get(lineCounter++).split(" ");
-            Street street = new Street();
-            street.name = streetData[2];
-            street.time = Integer.valueOf(streetData[3]);
-            int start = Integer.valueOf(streetData[0]);
-            int end = Integer.valueOf(streetData[1]);
+        HashMap<String, Integer> carsByStreet = new HashMap<>();
 
 
-            if (!intersections.containsKey(start)){
-                intersections.put(start, new Intersection(start));
+        for (int i = 0; i < simulation.carsNumber; ++i){
+            String[] carPath = lines.get(lineCounter++).split(" ");
+            int streets = carPath.length;
+            for (int j = 1; j < streets; j++) {
+                if (!carsByStreet.containsKey(carPath[j])){
+                    System.out.println("no contiene");
+                    carsByStreet.put(carPath[j], 0);
+                }
+                carsByStreet.put(carPath[j], carsByStreet.get(carPath[j]) + 1);
+                //System.out.println("Por la calle " + carPath[j] + " pasan " + carsByStreet.get(carPath[j]));
             }
-            intersections.get(start).out.add(street);
-
-            if (!intersections.containsKey(end)){
-                intersections.put(end, new Intersection(end));
-            }
-            intersections.get(end).in.add(street);
-
-        }*/
+        }
+        simulation.carsByStreet = carsByStreet;
         /*Collections.sort(data, new Comparator<Pizza>() {
             @Override
             public int compare(Pizza p1, Pizza p2) {
