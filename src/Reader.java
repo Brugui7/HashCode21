@@ -7,55 +7,82 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Reader {
-    public static PizzaDB read(String path){
-        ArrayList<Pizza>  data = new ArrayList<>();
-        List<String> lines = new ArrayList<>();
+    public static Simulation read(String path){
+        Simulation simulation = new Simulation();
 
-        TreeMap<Integer, Integer> pizzaByIngN = new TreeMap<>();
-        HashMap<String, Integer> ingByPizza = new HashMap<>();
+
+        List<String> lines = new ArrayList<>();
 
         try {
             lines = Files.readAllLines(Paths.get(path));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        int pizzasNumber, teamsOf2, teamsOf3, teamsOf4, maxIng = 0;
+
         String[] firstInfo = lines.get(0).split(" ");
 
         //lee primera línea
-        pizzasNumber = Integer.valueOf(firstInfo[0]);
-        teamsOf2 = Integer.valueOf(firstInfo[1]);
-        teamsOf3 = Integer.valueOf(firstInfo[2]);
-        teamsOf4 = Integer.valueOf(firstInfo[3]);
+        simulation.duration = Integer.valueOf(firstInfo[0]);
+        simulation.intersectionsNumber = Integer.valueOf(firstInfo[1]);
+        simulation.streetsNumber = Integer.valueOf(firstInfo[2]);
+        simulation.carsNumber = Integer.valueOf(firstInfo[3]);
+        simulation.bonusPoints = Integer.valueOf(firstInfo[4]);
 
-        System.out.println("\t" + "Pizzas: " + pizzasNumber + "\n\tEquipos de 2: " + teamsOf2 + "\n\t" + "Equipos de 3: " + teamsOf3 + "\n\tEquipos de 4: " + teamsOf4);
+        System.out.println("\t" + "Duración: " + simulation.duration + "\n" +
+                "\tIntersecciones: " + simulation.intersectionsNumber + "\n" +
+                "\t" + "Calles: " + simulation.streetsNumber + "\n\tBonus Points: " + simulation.bonusPoints
+        );
 
+        HashMap<Integer, Intersection> intersections = new HashMap<>();
         int lineCounter = 1;
-        for (int i = 0; i < pizzasNumber; ++i){
+        for (int i = 0; i < simulation.intersectionsNumber; ++i){
+            String[] streetData = lines.get(lineCounter++).split(" ");
+            Street street = new Street();
+            street.name = streetData[2];
+            street.time = Integer.valueOf(streetData[3]);
+            int start = Integer.valueOf(streetData[0]);
+            int end = Integer.valueOf(streetData[1]);
 
-            Pizza pizza = new Pizza();
-            pizza.index = i;
 
-            String[] ingredients = lines.get(lineCounter++).split(" ");
-            int ingNumber = Integer.valueOf(ingredients[0]);
-            if (!pizzaByIngN.containsKey(ingNumber)){
-                pizzaByIngN.put(ingNumber, 0);
+            if (!intersections.containsKey(start)){
+                intersections.put(start, new Intersection(start));
             }
+            intersections.get(start).out.add(street);
 
-            pizzaByIngN.put(ingNumber, pizzaByIngN.get(ingNumber) + 1);
-
-            for (int j = 1; j < ingNumber + 1; j++){
-                String ing = ingredients[j];
-                pizza.ingredientsArray.add(ing);
-
-                if (!ingByPizza.containsKey(ing)){
-                    ingByPizza.put(ing, 0);
-                    maxIng++;
-                }
-                ingByPizza.put(ing, ingByPizza.get(ing) + 1);
+            if (!intersections.containsKey(end)){
+                intersections.put(end, new Intersection(end));
             }
-            data.add(pizza);
+            intersections.get(end).in.add(street);
+
         }
+
+        /*for (int i = 0; i < simulation.carsNumber; ++i){
+            String[] streetData = lines.get(lineCounter++).split(" ");
+            Street street = new Street();
+            street.name = streetData[2];
+            street.time = Integer.valueOf(streetData[3]);
+            int start = Integer.valueOf(streetData[0]);
+            int end = Integer.valueOf(streetData[1]);
+
+
+            if (!intersections.containsKey(start)){
+                intersections.put(start, new Intersection(start));
+            }
+            intersections.get(start).out.add(street);
+
+            if (!intersections.containsKey(end)){
+                intersections.put(end, new Intersection(end));
+            }
+            intersections.get(end).in.add(street);
+
+        }*/
+        /*Collections.sort(data, new Comparator<Pizza>() {
+            @Override
+            public int compare(Pizza p1, Pizza p2) {
+                if (p1.ingN == p2.ingN) return 0;
+                return p1.ingN > p2.ingN ? -1 : 1;
+            }
+        });
 
         System.out.println("\n\tPizzas por nº de ingredientes RAW");
         System.out.println("\t" + pizzaByIngN.entrySet());
@@ -75,10 +102,12 @@ public class Reader {
          aux = new ArrayList(ingByPizza.values());
         Collections.sort(aux);
         stringAux = "\t" + aux;
-        System.out.println(stringAux.replace(",", ""));
+        System.out.println(stringAux.replace(",", ""));*/
 
 
-        return new PizzaDB(teamsOf2, teamsOf3, teamsOf4, data);
+        simulation.intersections = intersections;
+        //db.totalIng = ingByPizza.size();
+        return simulation;
     }
 }
 
