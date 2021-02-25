@@ -24,12 +24,14 @@ public class Simulation {
         scheduleds = new ArrayList<>();
         for (Intersection intersection : intersections.values()){
             IntersectionScheduled intScheduled = new IntersectionScheduled(intersection.id);
+            int time = intersection.in.size() < 3 ? 10 : 1;
+
             for (Street street : intersection.in){
                 if (carsByStreet.get(street.name) == null) continue;
-                if (carsByStreet.get(street.name) == 1) continue;
+                int cars = carsByStreet.get(street.name);
+                //carsByStreet.put(street.name, carsByStreet.get(street.name) - 1);
 
-
-                intScheduled.schedule.put(street.name, 1);
+                intScheduled.schedule.put(street.name,  1);
                 duration--;
             }
             if (intScheduled.schedule.size() == 0) continue;

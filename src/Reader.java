@@ -64,7 +64,6 @@ public class Reader {
             int streets = carPath.length;
             for (int j = 1; j < streets; j++) {
                 if (!carsByStreet.containsKey(carPath[j])){
-                    System.out.println("no contiene");
                     carsByStreet.put(carPath[j], 0);
                 }
                 carsByStreet.put(carPath[j], carsByStreet.get(carPath[j]) + 1);
