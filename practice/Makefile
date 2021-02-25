@@ -1,4 +1,4 @@
-EXE:=number-of-ingredients.x sol-random.x sol-upper-bound.x
+EXE:=number-of-ingredients.x sol-random.x sol-upper-bound.x sol-easy.x
 CFLAGS:=-std=c++17
 
 all : $(EXE)

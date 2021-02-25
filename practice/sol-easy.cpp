@@ -24,7 +24,7 @@ struct pizza_t : ingredient_set
     bool operator<(const pizza_t& that)const
     {
         return that.count() == this->count() ? that.index < this->index :
-            that.count() > this->count();
+            this->count() < that.count();
     }
 };
 
@@ -110,6 +110,7 @@ struct pizzaDB
     void sort()
     {
         std::sort(vpizza.begin(),vpizza.end());
+        std::cerr << "first pizza: " << vpizza[0].count () << '\n';
     }
 };
 

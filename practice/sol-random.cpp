@@ -10,15 +10,15 @@
 #include <cmath>
 #include "decision_tree.h"
 
-constexpr double ALPHA = 1.0;
-constexpr int SEARCH_ITERATIONS = 1000;
-constexpr int SEARCH_SPACE = 20;
+constexpr double ALPHA = 2.0;
+constexpr int SEARCH_ITERATIONS = 10000;
+constexpr int SEARCH_SPACE = 10;
+constexpr int MAX_INGREDIENTS=10'000;
 
 #define __fast_io__ \
     std::ios_base::sync_with_stdio(false);std::cin.tie(0);std::cout.tie(0);
 using namespace std;
 
-constexpr int MAX_INGREDIENTS=10'000;
 typedef bitset<MAX_INGREDIENTS> ingredient_set;
 
 struct pizza_t : ingredient_set
@@ -30,7 +30,7 @@ struct pizza_t : ingredient_set
     bool operator<(const pizza_t& that)const
     {
         return that.count() == this->count() ? that.index < this->index :
-            that.count() < this->count();
+            this->count() < that.count();
     }
 };
 
@@ -130,6 +130,7 @@ struct pizzaDB
     void sort()
     {
         std::sort(vpizza.begin(),vpizza.end());
+        std::cerr << "first pizza: " << vpizza[0].count () << '\n';
     }
     void compute_weights()
     {
