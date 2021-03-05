@@ -10,11 +10,11 @@
 #include <list>
 
 // score: 1001
-// score: 4565642
-// score: 1231878
-// score: 969685
-// score: 661797
-// score: 455737
+// score: 4566576 
+// score: 1299357
+// score: 1573100
+// score: 684769
+// score: 819083
 
 class name_resolution
 {
@@ -45,13 +45,16 @@ struct car_t
     const name_resolution& strdb;
     int id;
     int pos{0};
+    int time_to_finish{0};
     std::vector<int> path;
     car_t(const name_resolution& str_name):
         strdb{str_name}
     {}
-    void add_path(std::string name)
+    void add_path(int st,int L)
     {
-        path.push_back(strdb.get_id(name));
+        path.push_back(st);
+        if(path.size()>1)
+            time_to_finish += L;
     }
     int get_street()const
     {
@@ -85,6 +88,10 @@ struct street_t
     int id;
     std::string name;
     int beg, end, L;
+    int ncars{};
+    
+    void set_car(){ncars++;}
+    int get_cars()const {return ncars;}
     
     std::queue< std::pair<int,int> > Q;
     
@@ -157,8 +164,10 @@ std::ostream& operator << (std::ostream& os, const node_t& node)
 }
 
 auto get_graph(int N_nodes, 
-    const std::vector<street_t>& streets,
-    const name_resolution& str_name
+    std::vector<street_t>& streets,
+    const name_resolution& str_name,
+    const std::vector<car_t>& cars,
+    const int T_max
     )
 {
     std::vector<node_t> graph;
@@ -166,8 +175,18 @@ auto get_graph(int N_nodes,
     for(int i=0;i<N_nodes;++i)
         graph.emplace_back(i,str_name);
     
+    for(auto& c: cars)
+    if(c.time_to_finish <= T_max){ // this car makes it
+        for(size_t i=0;i<c.path.size()-1;++i)
+        {
+            int id = c.path[i];
+            streets[id].set_car();
+        }
+    }
+    
     // construct graph
     for(const auto& st : streets)
+    if(st.get_cars()) // use only important streets
     {
         graph[st.beg].out.push_back(st.id);
         graph[st.end].in.push_back(st.id);
@@ -278,7 +297,8 @@ auto get_street(std::istream& is)
     return str;
 }
 auto get_car(std::istream& is,
-    const name_resolution& strdb)
+    const name_resolution& strdb,
+    const std::vector<street_t>& streets)
 {
     car_t c{strdb};
     int n; is>>n;
@@ -287,7 +307,8 @@ auto get_car(std::istream& is,
     while(n--)
     {
         std::string name;is>>name;
-        c.add_path(name);
+        int st =strdb.get_id(name);
+        c.add_path(st,streets[ st ].L);
     }
     return c;
 }
@@ -328,13 +349,13 @@ int main()
     }
     for(int i=0;i<N_cars;++i)
     {
-        car_t c = get_car(cin,strdb);
+        car_t c = get_car(cin,strdb,streets);
         cars.push_back(c);
         auto &st = streets[c.get_street()];
         st.Q.push({0,i}); 
     }
     // construct traffic light rules 
-    vector<node_t> city = get_graph(N_nodes,streets,strdb);
+    vector<node_t> city = get_graph(N_nodes,streets,strdb,cars,T_max);
     
     output_plan(cout,city,streets);
     

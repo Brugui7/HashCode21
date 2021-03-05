@@ -1,4 +1,4 @@
-EXE:=sol-naive.x sol-2.x sol-3E.x
+EXE:=sol-naive.x sol-2.x sol-3E.x sol-simulation.x
 CFLAGS:=-std=c++17
 
 all : $(EXE)
