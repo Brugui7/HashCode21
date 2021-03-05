@@ -9,12 +9,21 @@
 #include <cassert>
 #include <list>
 
-// score: 1001
-// score: 4566576 
-// score: 1299357
-// score: 1573100
-// score: 684769
-// score: 819083
+// predicted scores
+// A: 1'001
+// B: 4'562'233
+// C: 1'293'917
+// D: 878'769
+// E: 416'354
+// F: 818'077
+
+// actual scores
+// A: 1'001
+// B: 4'565'648
+// C: 1'294'247
+// D: 2'069'507
+// E: 684'572
+// F: 818'914
 
 class name_resolution
 {
@@ -115,16 +124,43 @@ struct node_t
     {}
     std::vector<int> in,out;
     std::vector< std::pair<int,int> > schedule;
-    
+    std::vector<int> in_order;
+    std::vector<bool> used;
+    std::map<int,int> inv_in; 
     int T{};
     
-    void insert_schedule(int i,int t)
+    void build_schedule()
     {
-        if(t<=0) 
-            throw std::runtime_error(
-            "node_t::insert_schedule(): t<=0 is not allowed");
-        schedule.push_back({i,t});
-        T += t;
+        int last_free = 0;
+        for(int& i: in_order)
+        if(i<0)
+        {
+            while(used.at(last_free))
+                last_free++;
+            i = in.at(last_free);
+            used.at(last_free) = true;
+        }
+        
+        for(int i : in_order)
+            schedule.push_back({i,1});
+    }
+    
+    void set_preference(int time, int st)
+    {
+        time %= T;
+        int pos = inv_in.at(st);
+        if(used.at(pos))return;
+        
+        used.at(pos) = true;
+        for(int t=0;t<T;++t)
+        {
+            time = (time+1)%T;
+            if(in_order.at(time)<0)
+            {
+                in_order.at(time) = st;
+                break;
+            }
+        }
     }
     
     bool active()const{return T>0;}
@@ -135,20 +171,20 @@ struct node_t
         if(T==0) 
             throw std::runtime_error(
             "node_t::green(): T=0");
-        if(schedule.size()==0) 
-            throw std::runtime_error(
-            "node_t::green(): no green lights are scheduled");
-        time %= T;  
-        for(auto [s,t]: schedule)
+        return in_order.at(time % T);
+    }
+    void init_schedule()
+    {
+        T = in.size();
+        in_order.resize(T);
+        used.resize(T);
+        std::fill(in_order.begin(),in_order.end(),-1);
+        std::fill(used.begin(),used.end(),false);
+        
+        for(int i=0;i<in.size();++i)
         {
-            if(time<t)
-                return s;
-            time-=t;
+            inv_in[ in[i]  ] = i;
         }
-        if(schedule.size()==0) 
-            throw std::runtime_error(
-            "node_t::green(): ERROR no street scheduled");
-        return -1;
     }
 };
 
@@ -195,8 +231,7 @@ auto get_graph(int N_nodes,
     // TODO plan the lights: homogeneus assignment
     for(auto &node : graph)
     {
-        for(auto st : node.in)
-            node.insert_schedule(st,1);
+        node.init_schedule();
     }
     return graph;
 }
@@ -214,7 +249,7 @@ struct simulation_t
     std::set<int> busy_nodes; 
     
     simulation_t(int t_max,int bonus, 
-        const std::vector<node_t>& graph,
+        std::vector<node_t>& graph,
         std::vector<street_t>& streets,
         std::vector<car_t>& cars,
         std::ostream& o):
@@ -239,7 +274,28 @@ struct simulation_t
            for(auto no_id : busy_nodes)
            {
                 auto & node = graph[no_id];
-                auto &st = streets [node.green(time) ]; 
+                
+                if(node.green(time)<0)
+                {
+                    // not decided yet
+                    for(int st_id : node.in)
+                    {
+                        auto &st = streets.at(st_id);
+                        if(st.Q.empty())continue;
+                        // got some non-empty queue
+                        
+                        auto [t,car_id] = st.Q.front();       
+                        if(t>time) continue;
+                        // this car can move
+                        
+                        node.set_preference(time,st_id);
+                        break;
+                    }
+                    
+                }
+                if(node.green(time)<0) continue;
+                
+                auto &st = streets .at( node.green(time) ); 
                 if(st.Q.empty())
                     continue;
                 auto [t,car_id] = st.Q.front();       
@@ -357,10 +413,7 @@ int main()
     // construct traffic light rules 
     vector<node_t> city = get_graph(N_nodes,streets,strdb,cars,T_max);
     
-    output_plan(cout,city,streets);
-    
     // run simulation
-    
     ofstream log("/dev/null");
     //ofstream log("log");
     
@@ -374,5 +427,9 @@ int main()
     cerr << "last arrival: " << sim.last << '\n';
     cerr << "min score: " << sim.min_score << '\n';
     
+    for(auto &no : city)
+        no.build_schedule();
+    
+    output_plan(cout,city,streets);
     return 0;
 }
