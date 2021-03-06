@@ -10,14 +10,6 @@
 #include <vector>
 
 // predicted scores
-// A: 4'004
-// B: 9'137'020
-// C: 2'611'946
-// D: 4'974'364
-// E: 1'396'614
-// F: 1'648'704
-
-// actual scores
 // A: 2'002
 // B: 4'568'510
 // C: 1'305'973
@@ -300,6 +292,16 @@ struct simulation_t
     std::vector<sim_street_t> streets;
     std::vector<T> intersections;
 
+    void reset()
+    {
+        score = 0;
+        cars_arrived = 0;
+        first = std::numeric_limits<int>::max();
+        last = -1;
+        min_score = std::numeric_limits<int>::max();
+        max_score = -1;
+    }
+
     simulation_t(int t_max,
                  int bonus,
                  const std::vector<T>& in_tersections,
@@ -319,6 +321,8 @@ struct simulation_t
 
     void run()
     {
+        os << "Final simulation\n";
+        reset();
         for (auto& c : cars)
             c.reset();
         for (auto& s : streets)
@@ -353,14 +357,15 @@ struct simulation_t
             return;
 
         auto [t, car_id] = st.Q.front();
-        st.Q.pop();
         auto& car = cars.at(car_id);
 
         os << "node id: " << node.id << '\n';
-        os << "green light on street: " << node.green(time) << '\n';
+        os << "green light on street: " << streets.at(node.green(time)).name
+           << '\n';
         os << "size of queue " << st.Q.size() << '\n';
         os << "last element: time=" << t << " car=" << car.id << '\n';
 
+        st.Q.pop();
         car.advance();
         auto& new_st = streets[car.get_street()];
 
@@ -370,13 +375,13 @@ struct simulation_t
         if (car.finish())
         {
             os << "car " << car.id << " finished moving to end_list on street "
-               << new_st.id << " " << new_st.name << '\n';
+               << new_st.name << '\n';
             anotate_score(time + new_st.L);
         }
         else
         {
-            os << "car " << car.id << " moving to queue on street " << new_st.id
-               << '\n';
+            os << "car " << car.id << " moving to queue on street "
+               << new_st.name << '\n';
             new_st.Q.push({time + new_st.L, car.id});
         }
     }
@@ -395,11 +400,13 @@ struct simulation_t
     }
     void set_plan_0()
     {
+        os << "Setting Plan 0\n";
         for (auto& i : intersections)
             i.set_simple_plan();
     }
     void set_plan_1()
     {
+        os << "Setting Plan 1\n";
         for (auto& no : intersections)
             no.reset();
         for (auto& c : cars)
